@@ -1,0 +1,129 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+hr {
+  color: rgb(165, 168, 170);
+  width: 95%;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+#goBtn {
+  font-size: 1em;
+  border: 1px solid grey;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: rgb(34, 100, 255);
+  color: white;
+  cursor: pointer;
+  justify-self: center;
+}
+
+.options-container {
+  margin-top: 30px;
+}
+
+#start-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 30px;
+  text-align: center;
+}
+
+#start {
+  max-width: 800px;
+  padding: 30px;
+  background-color: rgb(244, 244, 244);
+}
+
+#fileInput {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.5em;
+  border: 1px solid grey;
+}
+
+#clipreport {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  width: 100%;
+}
+
+.clip-container {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.bottom-container {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+  justify-content: start;
+  align-items: top;
+}
+
+.right {
+  margin-left: 20px;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.noPgSplit {
+  page-break-inside: avoid;
+}
+
+h1 {
+  margin: 0;
+}
+
+.clip-name {
+  font-size: 16px;
+}
+
+.top-container {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  width: 100%;
+}
+
+.barcode-container {
+  border: 1px solid lightgrey;
+}
+
+.duration-container {
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.depo-lines-container{
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.depo-line {
+  font-family: monospace;
+  margin: 0;
+}
+
+@media print {
+  .pagebreak {
+      clear: both;
+      page-break-after: always;
+  }
+}

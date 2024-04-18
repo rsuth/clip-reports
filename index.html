@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>OnCue Detailed Clips Report</title>
+  <script src='https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js'></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="start-container">
+    <div id="start">
+      <h1>OnCue Detailed Reports Generator</h1>
+      <p>Many attorneys got used to using TrialDirector's "Detailed Reports" with barcodes for each clip.
+        OnCue does not offer an easy way to create these reports with barcodes.
+        Use this tool to create TrialDirector style Detail Reports that work with your OnCue Designation lists</p>
+      <p>This tool works completely offline - it runs locally on in your browser and no data leaves your computer.</p>
+      <p>To use, export an XML file of your designation list from OnCue. Then use the file selector below to load the
+        file
+        and create the report.</p>
+      <p>Once the report is generated, you can print this webpage for use in trial.</p>
+
+      <input style="display: none" type="file" id="fileInput" accept=".xml" onchange="parseXML()" />
+      <div class="options-container">
+        <input type="checkbox" id="pageBreaks" !checked>
+        <label for="pageBreaks">Add Page Breaks<br><small>(<b>NOTE:</b> only works in Chrome)</small></label>
+      </div>
+      <button id="goBtn" onclick="document.getElementById('fileInput').click()">Load XML File</button>
+
+    </div>
+  </div>
+  <main>
+    <div id="clipreport"></div>
+  </main>
+  <template id="cliptemplate">
+    <div class="clip-container">
+      <div class="bottom-container">
+        <div class="left">
+          <div class="barcode-container noPgSplit">
+            <svg id="barcode" class="barcode"></svg>
+          </div>
+          <div id="duration" class="duration-container"></div>
+        </div>
+        <div class="right">
+          <div class="top-container">
+            <h1 id="clipname" class="clip-name"></h1>
+          </div>
+          <div id="cliptext" class="depo-lines-container"></div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <script src="OncueClipReports.js"></script>
+
+</html>
