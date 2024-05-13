@@ -34,7 +34,6 @@ function renderClips(clips) {
 
 function parseXML() {
   const fileInput = document.getElementById("fileInput");
-  const output = document.getElementById("output");
 
   if (fileInput.files.length === 0) {
     alert("Please select an XML file first!");
@@ -59,11 +58,11 @@ function parseXML() {
 
 function clipsFromXMLObj(obj) {
   let baseId = obj.presentation[0].mediaID;
-  let clips = [];
+  let segments = [];
 
   obj.presentation[0].scene.forEach((s) => {
     let desig = obj.presentation[0].designation[parseInt(s.sourceXmlIndex)];
-    let clip = {
+    let segment = {
       name: desig.name,
       barcode: `x${baseId}.${s.barcodeId}`,
       lines: desig.depoLine.map((l) =>
@@ -72,10 +71,44 @@ function clipsFromXMLObj(obj) {
       duration: Math.round(
         parseFloat(desig.stopTime) - parseFloat(desig.startTime)
       ),
+      autoAdvance: s.autoAdvance === "no",
     };
-    clips.push(clip);
+    segments.push(segment);
   });
-  return clips;
+
+  let joinedSegments = [];
+  let i = 0;
+  let merged = [];
+  do {
+    merged.push(segments[i]);
+    // if it's autoadvance, continue to accumulate
+    if (segments[i].autoAdvance) {
+      segments[i].lines.push(
+        '<div style="margin-top: 10px; margin-bottom: 10px"><span style="display: inline-block; transform: rotate(270deg);">\u2702\uFE0F</span>' +
+          "\u2500 ".repeat(25) +
+          "</div>"
+      );
+      i++;
+      continue;
+    }
+    // otherwise, merge and push
+    else {
+      let all = merged.reduce((joined, seg, j) => {
+        if (j !== 0) {
+          joined.lines.push(...seg.lines);
+          joined.duration += seg.duration;
+        }
+        return joined;
+      }, merged[0]);
+      console.log(all);
+      joinedSegments.push(all);
+      i++;
+      // reset merged
+      merged = [];
+    }
+  } while (i < segments.length - 1);
+
+  return joinedSegments;
 }
 
 function xmlAttributesToObj(xmlNode) {
