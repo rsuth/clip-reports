@@ -1,16 +1,17 @@
-function renderClips(clips) {
+function renderClips(clips, transcriptName) {
   const anchor = document.getElementById("clipreport");
   const template = document.getElementById("cliptemplate");
   const startEl = document.getElementById("start-container");
   const pageBreaks = document.getElementById("pageBreaks").checked;
-
+  const reportTitleEl = document.getElementById("reportTitle");
   startEl.style.display = "none";
 
+  reportTitleEl.innerHTML = `Clips from ${transcriptName}`;
   clips.forEach((clip) => {
     var clone = template.content.cloneNode(true);
     var pgbreak = document.createElement("div");
     pgbreak.className = "pagebreak";
-    clone.getElementById("clipname").textContent = clip.name;
+    clone.getElementById("clipname").innerHTML = clip.name;
     JsBarcode(clone.getElementById("barcode"), clip.barcode, {
       margin: 7,
       width: 1,
@@ -18,7 +19,7 @@ function renderClips(clips) {
       fontSize: 15,
     });
     clone.getElementById("cliptext").innerHTML = clip.lines
-      .map((line) => `<pre class="depo-line">${line}</pre>`)
+      .map((line) => `<pre class="depo-line">${line.text}</pre>`)
       .join("");
     clone.getElementById(
       "duration"
@@ -50,63 +51,89 @@ function parseXML() {
 
     const obj = xmlAttributesToObj(xmlDoc.documentElement); // Start from the root element
     const clips = clipsFromXMLObj(obj);
-    renderClips(clips);
+    const transcriptName = obj.presentation[0].designation[0].mediaID;
+    renderClips(clips, transcriptName);
   };
 
   reader.readAsText(file);
 }
 
 function clipsFromXMLObj(obj) {
-  let baseId = obj.presentation[0].mediaID;
-  let segments = [];
+  const baseId = obj.presentation[0].mediaID;
+  const transcriptName = obj.presentation[0].designation[0].mediaID;
+  const segments = obj.presentation[0].scene.map((s, index) =>
+    createSegment(
+      s,
+      obj.presentation[0].designation[parseInt(s.sourceXmlIndex)],
+      baseId
+    )
+  );
 
-  obj.presentation[0].scene.forEach((s) => {
-    let desig = obj.presentation[0].designation[parseInt(s.sourceXmlIndex)];
-    let segment = {
-      name: desig.name,
-      barcode: `x${baseId}.${s.barcodeId}`,
-      lines: desig.depoLine.map((l) =>
-        generateLine(l.line, l.prefix, l.text, l.page)
-      ),
-      duration: Math.round(
-        parseFloat(desig.stopTime) - parseFloat(desig.startTime)
-      ),
-      autoAdvance: s.autoAdvance === "no",
-    };
-    segments.push(segment);
-  });
+  let merged = mergeSegments(segments);
+  for (let i = 0; i < merged.length; i++) {
+    merged[i].name = generateClipName(merged[i], transcriptName);
+  }
+  return merged;
+}
 
-  let joinedSegments = [];
-  let i = 0;
+function generateClipName(clip, transcriptName) {
+  let startPage = clip.lines[0].page;
+  let startLine = clip.lines[0].line;
+  let endPage = clip.lines[clip.lines.length - 1].page;
+  let endLine = clip.lines[clip.lines.length - 1].line;
+  return `${startPage}:${startLine} - ${endPage}:${endLine}<span class="transcript-name">(${transcriptName})</span>`;
+}
+
+function createSegment(scene, designation, mediaID) {
+  return {
+    barcode: `x${mediaID}.${scene.barcodeId}`,
+    lines: designation.depoLine.map((line) => {
+      return {
+        line: line.line,
+        page: line.page,
+        text: generateLine(line.line, line.prefix, line.text, line.page),
+      };
+    }),
+    duration: Math.round(
+      parseFloat(designation.stopTime) - parseFloat(designation.startTime)
+    ),
+    autoAdvance: scene.autoAdvance === "no",
+  };
+}
+
+function mergeSegments(segments) {
+  const joinedSegments = [];
   let merged = [];
-  do {
-    merged.push(segments[i]);
-    // if it's autoadvance, continue to accumulate
-    if (segments[i].autoAdvance) {
-      segments[i].lines.push(
-        '<div style="margin-top: 10px; margin-bottom: 10px"><span style="display: inline-block; transform: rotate(270deg);">\u2702\uFE0F</span>' +
+
+  segments.forEach((segment, index) => {
+    merged.push(segment);
+
+    if (segment.autoAdvance) {
+      // add cut indicator to indicate there is a cut here.
+      segment.lines.push({
+        line: "",
+        page: "",
+        text:
+          '<div style="margin-top: 10px; margin-bottom: 10px"><span style="display: inline-block; transform: rotate(270deg);">\u2702\uFE0F</span>' +
           "\u2500 ".repeat(25) +
-          "</div>"
-      );
-      i++;
-      continue;
-    }
-    // otherwise, merge and push
-    else {
-      let all = merged.reduce((joined, seg, j) => {
-        if (j !== 0) {
-          joined.lines.push(...seg.lines);
-          joined.duration += seg.duration;
-        }
-        return joined;
-      }, merged[0]);
-      console.log(all);
-      joinedSegments.push(all);
-      i++;
-      // reset merged
+          "</div>",
+      });
+    } else {
+      if (merged.length > 1) {
+        const mergedSegment = merged.reduce((acc, seg, idx) => {
+          if (idx !== 0) {
+            acc.lines.push(...seg.lines);
+            acc.duration += seg.duration;
+          }
+          return acc;
+        }, merged[0]);
+        joinedSegments.push(mergedSegment);
+      } else {
+        joinedSegments.push(merged[0]);
+      }
       merged = [];
     }
-  } while (i < segments.length - 1);
+  });
 
   return joinedSegments;
 }
